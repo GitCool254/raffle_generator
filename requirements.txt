@@ -1,0 +1,7 @@
+Flask
+qrcode
+Pillow
+PyMuPDF==1.24.10
+gspread
+google-auth
+google-auth-oauthlib
