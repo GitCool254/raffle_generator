@@ -173,14 +173,14 @@ def generate_ticket():
     doc.close()
 
    # Log data to Google Sheet
-sheet.append_row([
-    fullname,
-    ticket_no,
-    price,
-    place,
-    date_str,
-    current_time
-])
+   sheet.append_row([
+        fullname,
+        ticket_no,
+        price,
+        place,
+        date_str,
+        current_time
+    ])
 
     return send_file(output_path, as_attachment=True)
 
