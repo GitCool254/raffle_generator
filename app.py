@@ -99,12 +99,12 @@ def generate_unique_ticket():
 
 
 def fit_font_size(page, rect, text, fontname="helv", max_fontsize=12):
-    font = fitz.Font(fontname)  # Create font object
+    font = fitz.Font(fontname=fontname)
     for size in range(max_fontsize, 1, -1):
         text_width = font.text_length(text, fontsize=size)
         if text_width <= rect.width:
             return size
-    return 8  # fallback if nothing fits
+    return 8
 
 
 @app.route("/", methods=["GET", "POST"])
