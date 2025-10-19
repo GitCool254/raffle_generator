@@ -165,24 +165,25 @@ def generate_ticket():
             y = r.y1 - (r.height * 0.15)
             page.insert_text((x, y), text_value, fontsize=fontsize, fontname="helv", color=(0, 0, 0))
 
+
     # Insert QR Code (adjust position as needed)
-    qr_rect = fitz.Rect(430, 120, 520, 210)
-    page.insert_image(qr_rect, stream=qr_bytes)
+        qr_rect = fitz.Rect(430, 120, 520, 210)
+        page.insert_image(qr_rect, stream=qr_bytes)
 
-    doc.save(output_path)
-    doc.close()
+        doc.save(output_path)
+        doc.close()
 
-   # Log data to Google Sheet
-   sheet.append_row([
-        fullname,
-        ticket_no,
-        price,
-        place,
-        date_str,
-        current_time
-    ])
+    # Log data to Google Sheet
+        sheet.append_row([
+            fullname,
+            ticket_no,
+            price,
+            place,
+            date_str,
+            current_time
+        ])
 
-    return send_file(output_path, as_attachment=True)
+        return send_file(output_path, as_attachment=True)
 
 
 if __name__ == "__main__":
