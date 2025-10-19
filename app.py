@@ -1,4 +1,6 @@
 # app.py
+import gspread
+from google.oauth2.service_account import Credentials
 from flask import Flask, request, send_file, render_template_string
 import fitz  # PyMuPDF
 import qrcode
@@ -7,6 +9,38 @@ import os
 import datetime
 import random
 import json
+
+# Google Sheets setup
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+SERVICE_ACCOUNT_FILE = "creds/service_account.json"
+
+credentials = Credentials.from_service_account_file(
+    SERVICE_ACCOUNT_FILE, scopes=SCOPES
+)
+gc = gspread.authorize(credentials)
+
+# Your Sheet ID
+SHEET_ID = "PASTE_YOUR_SHEET_ID_HERE"
+sheet = gc.open_by_key(SHEET_ID).sheet1
+
+USED_NUMBERS_FILE = "used_ticket_numbers.json"
+
+def generate_unique_ticket_number():
+    """Generate a unique 6-digit ticket number with GWS prefix."""
+    if os.path.exists(USED_NUMBERS_FILE):
+        with open(USED_NUMBERS_FILE, "r") as f:
+            used_numbers = set(json.load(f))
+    else:
+        used_numbers = set()
+
+    while True:
+        random_number = random.randint(100000, 999999)
+        ticket_no = f"GWS-{random_number}"
+        if ticket_no not in used_numbers:
+            used_numbers.add(ticket_no)
+            with open(USED_NUMBERS_FILE, "w") as f:
+                json.dump(list(used_numbers), f)
+            return ticket_no
 
 app = Flask(__name__)
 
@@ -64,14 +98,13 @@ def generate_unique_ticket():
     return ticket_id
 
 
-def fit_font_size(page, rect, text, fontname="helv", max_fontsize=None):
-    """Choose a font size that fits inside the placeholder rectangle."""
-    max_font = max_fontsize or int(rect.height * 1.2)
-    for size in range(max_font, 3, -1):
-        w = page.get_text_length(text, fontname=fontname, fontsize=size)
-        if w <= rect.width - 2:
+def fit_font_size(page, rect, text, fontname="helv", max_fontsize=12):
+    font = fitz.Font(fontname)  # Create font object
+    for size in range(max_fontsize, 1, -1):
+        text_width = font.text_length(text, fontsize=size)
+        if text_width <= rect.width:
             return size
-    return 6
+    return 8  # fallback if nothing fits
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -83,7 +116,7 @@ def generate_ticket():
     price = request.form["price"]
     place = request.form["place"]
     date_str = request.form["date"]
-    ticket_no = generate_unique_ticket()
+    ticket_no = generate_unique_ticket_number()
     current_time = datetime.datetime.now().strftime("%I:%M %p")
 
     replacements = {
@@ -138,6 +171,16 @@ def generate_ticket():
 
     doc.save(output_path)
     doc.close()
+
+   # Log data to Google Sheet
+sheet.append_row([
+    fullname,
+    ticket_no,
+    price,
+    place,
+    date_str,
+    current_time
+])
 
     return send_file(output_path, as_attachment=True)
 
