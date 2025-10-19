@@ -12,11 +12,11 @@ import json
 
 # Google Sheets setup
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-SERVICE_ACCOUNT_FILE = "creds/service_account.json"
+import json
 
-credentials = Credentials.from_service_account_file(
-    SERVICE_ACCOUNT_FILE, scopes=SCOPES
-)
+# Load Google service account from Render environment variable
+service_account_info = json.loads(os.getenv("GOOGLE_CREDS_JSON"))
+credentials = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
 gc = gspread.authorize(credentials)
 
 # Your Sheet ID
