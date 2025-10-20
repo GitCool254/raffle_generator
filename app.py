@@ -156,26 +156,26 @@ def generate_ticket():
     # Find all placeholder rectangles
     # === Improved placeholder replacement (handles hyphens, spaces, and missing matches) ===
     for placeholder, value in replacements.items():
-    # Try to find placeholder text normally
-    text_instances = page.search_for(placeholder, quads=False)
+        # Try to find placeholder text normally
+        text_instances = page.search_for(placeholder, quads=False)
 
-    # Fallback: try a relaxed search without spaces or hyphens
-    if not text_instances:
-        alt_placeholder = placeholder.replace("-", "").replace(" ", "")
-        text_instances = page.search_for(alt_placeholder, quads=False)
+        # Fallback: try a relaxed search without spaces or hyphens
+        if not text_instances:
+            alt_placeholder = placeholder.replace("-", "").replace(" ", "")
+            text_instances = page.search_for(alt_placeholder, quads=False)
 
-    # If still not found, log a warning
-    if not text_instances:
-        print(f"⚠️ Placeholder not found: {placeholder}")
-        continue
+        # If still not found, log a warning
+        if not text_instances:
+            print(f"⚠️ Placeholder not found: {placeholder}")
+            continue
 
-    # Replace each found placeholder region
-    for inst in text_instances:
-        page.draw_rect(inst, color=(1, 1, 1), fill=(1, 1, 1))  # white overlay
-        fontsize = fit_font_size(page, inst, value, fontname="helv")
-        x = inst.x0 + 1
-        y = inst.y1 - (inst.height * 0.2)
-        page.insert_text((x, y), value, fontsize=fontsize, fontname="helv", color=(0, 0, 0))
+        # Replace each found placeholder region
+        for inst in text_instances:
+            page.draw_rect(inst, color=(1, 1, 1), fill=(1, 1, 1))  # white overlay
+            fontsize = fit_font_size(page, inst, value, fontname="helv")
+            x = inst.x0 + 1
+            y = inst.y1 - (inst.height * 0.2)
+            page.insert_text((x, y), value, fontsize=fontsize, fontname="helv", color=(0, 0, 0))
 
 
     # Insert QR Code (adjust position as needed)
