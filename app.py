@@ -11,16 +11,18 @@ import random
 import json
 
 # Google Sheets setup
-SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-import json
+import os, json, gspread
+from google.oauth2.service_account import Credentials
 
-# Load Google service account from Render environment variable
-service_account_info = json.loads(os.getenv("GOOGLE_CREDS_JSON"))
-credentials = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
+# Google Sheets setup (use JSON from Render env variable)
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+
+creds_json = json.loads(os.getenv("GOOGLE_CREDS_JSON"))
+credentials = Credentials.from_service_account_info(creds_json, scopes=SCOPES)
 gc = gspread.authorize(credentials)
 
-# Your Sheet ID
-SHEET_ID = "PASTE_YOUR_SHEET_ID_HERE"
+# Your Sheet ID (replace with your actual sheet id)
+SHEET_ID = "1nMlh5maJD6Xz80hQTmKrUL28R3H2zKsunGzB0Jo2odw"
 sheet = gc.open_by_key(SHEET_ID).sheet1
 
 USED_NUMBERS_FILE = "used_ticket_numbers.json"
