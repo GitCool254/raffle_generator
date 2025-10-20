@@ -220,5 +220,7 @@ if __name__ == "__main__":
     template_path = "template.pdf"  # make sure this file is in your repo
     list_texts_in_pdf(template_path)
 
+# import check_texts
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
