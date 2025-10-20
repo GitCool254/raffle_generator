@@ -194,7 +194,27 @@ def generate_ticket():
 
         return send_file(output_path, as_attachment=True)
 
-# ✅ Placeholder scan (this runs before Flask app starts)
+import fitz  # PyMuPDF
+import os
+
+def list_texts_in_pdf(pdf_path):
+    if not os.path.exists(pdf_path):
+        print(f"❌ File not found: {pdf_path}")
+        return
+    doc = fitz.open(pdf_path)
+    print(f"\n🔍 Checking text placeholders in: {pdf_path}")
+    print("=" * 60)
+    for page_num, page in enumerate(doc, start=1):
+        print(f"\n📄 Page {page_num}:")
+        text = page.get_text("text")
+        lines = text.split("\n")
+        for line in lines:
+            if "{{" in line and "}}" in line:
+                print(f"➕ Found placeholder: {line.strip()}")
+    doc.close()
+    print("\n✅ Scan complete.\n")
+
+# ✅ Run placeholder scan before starting Flask
 if os.path.exists("template.pdf"):
     print("\n==============================")
     print("🔍 Scanning template placeholders...")
@@ -203,15 +223,11 @@ if os.path.exists("template.pdf"):
 else:
     print("⚠️ template.pdf not found for scan.\n")
 
-## ✅ Start the Flask server
-#if __name__ == "__main__":
-   # app.run(host="0.0.0.0", port=5000)
+# ✅ Then import Flask app and run
+from app import app
 
 #if __name__ == "__main__":
- #   template_path = "template.pdf"  # make sure this file is in your repo
-  #  list_texts_in_pdf(template_path)
-
-# import check_texts
+ #   app.run(host="0.0.0.0", port=5000)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
