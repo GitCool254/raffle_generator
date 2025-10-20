@@ -158,17 +158,17 @@ def generate_ticket():
 for placeholder, value in replacements.items():
     # Try to find placeholder text normally
     text_instances = page.search_for(placeholder, quads=False)
-    
+
     # Fallback: try a relaxed search without spaces or hyphens
     if not text_instances:
         alt_placeholder = placeholder.replace("-", "").replace(" ", "")
         text_instances = page.search_for(alt_placeholder, quads=False)
-    
+
     # If still not found, log a warning
     if not text_instances:
         print(f"⚠️ Placeholder not found: {placeholder}")
         continue
-    
+
     # Replace each found placeholder region
     for inst in text_instances:
         page.draw_rect(inst, color=(1, 1, 1), fill=(1, 1, 1))  # white overlay
@@ -182,20 +182,20 @@ for placeholder, value in replacements.items():
         #qr_rect = fitz.Rect(430, 120, 520, 210)
         #page.insert_image(qr_rect, stream=qr_bytes)
 
-        doc.save(output_path)
-        doc.close()
+            doc.save(output_path)
+            doc.close()
 
-    # Log data to Google Sheet
-        sheet.append_row([
-            fullname,
-            ticket_no,
-            price,
-            place,
-            date_str,
-            current_time
-        ])
+        # Log data to Google Sheet
+            sheet.append_row([
+                fullname,
+                ticket_no,
+                price,
+                place,
+                date_str,
+                current_time
+            ])
 
-        return send_file(output_path, as_attachment=True)
+            return send_file(output_path, as_attachment=True)
 
 import fitz  # PyMuPDF
 import os
