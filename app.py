@@ -50,7 +50,7 @@ def generate_unique_ticket_number():
 
     return ticket_no
 
-(app = Flask(__name__)
+app = Flask(__name__)
 
 OUTPUT_DIR = "output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
