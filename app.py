@@ -3,7 +3,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from flask import Flask, request, send_file, render_template_string
 import fitz  # PyMuPDF
-import qrcode
+#import qrcode
 import io
 import os
 import datetime
@@ -25,26 +25,32 @@ gc = gspread.authorize(credentials)
 SHEET_ID = "1nMlh5maJD6Xz80hQTmKrUL28R3H2zKsunGzB0Jo2odw"
 sheet = gc.open_by_key(SHEET_ID).sheet1
 
+# Path for storing used ticket numbers
 USED_NUMBERS_FILE = "used_ticket_numbers.json"
 
 def generate_unique_ticket_number():
     """Generate a unique 6-digit ticket number with GWS prefix."""
+    used = set()
     if os.path.exists(USED_NUMBERS_FILE):
         with open(USED_NUMBERS_FILE, "r") as f:
-            used_numbers = set(json.load(f))
-    else:
-        used_numbers = set()
+            try:
+                used = set(json.load(f))
+            except json.JSONDecodeError:
+                used = set()
 
     while True:
         random_number = random.randint(100000, 999999)
         ticket_no = f"GWS-{random_number}"
-        if ticket_no not in used_numbers:
-            used_numbers.add(ticket_no)
-            with open(USED_NUMBERS_FILE, "w") as f:
-                json.dump(list(used_numbers), f)
-            return ticket_no
+        if ticket_no not in used:
+            used.add(ticket_no)
+            break
 
-app = Flask(__name__)
+    with open(USED_NUMBERS_FILE, "w") as f:
+        json.dump(list(used), f)
+
+    return ticket_no
+
+(app = Flask(__name__)
 
 OUTPUT_DIR = "output"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -62,6 +68,7 @@ HTML_FORM = """
     Ticket price: <input name="price" required><br><br>
     Event place: <input name="place" required><br><br>
     Event date: <input name="date" required><br><br>
+    Time: <input name="time" required><br><br>
     <button type="submit">Generate Ticket</button>
   </form>
 </body></html>
@@ -73,8 +80,8 @@ PLACEHOLDERS = {
     "{{TICKET-NO}}": "ticket_no",
     "{{TICKET_PRICE}}": "price",
     "{{EVENT_PLACE}}": "place",
-    "{{DATE}}": "date",
-    "{{TIME}}": "time"
+    "{{DATE}}": "date_str",
+    "{{TIME}}": "current_time"
 }
 
 def generate_unique_ticket():
@@ -131,11 +138,11 @@ def generate_ticket():
     }
 
     # Generate QR code
-    qr_data = f"Goodwillstores@{fullname} - {ticket_no}"
-    qr_img = qrcode.make(qr_data)
-    qr_bytes = io.BytesIO()
-    qr_img.save(qr_bytes, format="PNG")
-    qr_bytes.seek(0)
+    #qr_data = f"Goodwillstores@{fullname} - {ticket_no}"
+    #qr_img = qrcode.make(qr_data)
+    #qr_bytes = io.BytesIO()
+    #qr_img.save(qr_bytes, format="PNG")
+    #qr_bytes.seek(0)
 
     template_path = "template.pdf"
     output_path = os.path.join(OUTPUT_DIR, f"{ticket_no}.pdf")
@@ -169,8 +176,8 @@ def generate_ticket():
 
 
     # Insert QR Code (adjust position as needed)
-        qr_rect = fitz.Rect(430, 120, 520, 210)
-        page.insert_image(qr_rect, stream=qr_bytes)
+        #qr_rect = fitz.Rect(430, 120, 520, 210)
+        #page.insert_image(qr_rect, stream=qr_bytes)
 
         doc.save(output_path)
         doc.close()
