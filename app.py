@@ -154,25 +154,28 @@ def generate_ticket():
     page = doc[0]
 
     # Find all placeholder rectangles
-    placeholder_rects = {}
-    for placeholder in replacements.keys():
-        rects = page.search_for(placeholder)
-        if rects:
-            placeholder_rects[placeholder] = rects
-
-    # Cover placeholder text with white boxes
-    for placeholder, rects in placeholder_rects.items():
-        for r in rects:
-            page.draw_rect(r, color=(1, 1, 1), fill=(1, 1, 1))
-
-    # Insert replacement text in the same locations
-    for placeholder, rects in placeholder_rects.items():
-        text_value = replacements.get(placeholder, "")
-        for r in rects:
-            fontsize = fit_font_size(page, r, text_value, fontname="helv", max_fontsize=int(r.height * 1.5))
-            x = r.x0 + 1
-            y = r.y1 - (r.height * 0.15)
-            page.insert_text((x, y), text_value, fontsize=fontsize, fontname="helv", color=(0, 0, 0))
+    # === Improved placeholder replacement (handles hyphens, spaces, and missing matches) ===
+for placeholder, value in replacements.items():
+    # Try to find placeholder text normally
+    text_instances = page.search_for(placeholder, quads=False)
+    
+    # Fallback: try a relaxed search without spaces or hyphens
+    if not text_instances:
+        alt_placeholder = placeholder.replace("-", "").replace(" ", "")
+        text_instances = page.search_for(alt_placeholder, quads=False)
+    
+    # If still not found, log a warning
+    if not text_instances:
+        print(f"⚠️ Placeholder not found: {placeholder}")
+        continue
+    
+    # Replace each found placeholder region
+    for inst in text_instances:
+        page.draw_rect(inst, color=(1, 1, 1), fill=(1, 1, 1))  # white overlay
+        fontsize = fit_font_size(page, inst, value, fontname="helv")
+        x = inst.x0 + 1
+        y = inst.y1 - (inst.height * 0.2)
+        page.insert_text((x, y), value, fontsize=fontsize, fontname="helv", color=(0, 0, 0))
 
 
     # Insert QR Code (adjust position as needed)
