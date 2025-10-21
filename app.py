@@ -119,7 +119,7 @@ def fit_font_size(page, rect, text, fontname="helv", max_fontsize=12):
 @app.route("/", methods=["GET", "POST"])
 def generate_ticket():
     if request.method == "GET":
-    return render_template_string(HTML_FORM)
+        return render_template_string(HTML_FORM)
 
     fullname = request.form.get("fullname", "").strip()
     price = request.form.get("price", "").strip()
