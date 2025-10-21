@@ -224,7 +224,7 @@ def generate_ticket():
         price,
         place,
         date_str,
-        current_time
+        time_str
     ])
 
     return send_file(output_path, as_attachment=True)
