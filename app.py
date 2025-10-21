@@ -81,7 +81,7 @@ PLACEHOLDERS = {
     "{{TICKET_PRICE}}": "price",
     "{{EVENT_PLACE}}": "place",
     "{{DATE}}": "date_str",
-    "{{TIME}}": "current_time"
+    "{{TIME}}": "time_str"
 }
 
 def generate_unique_ticket():
