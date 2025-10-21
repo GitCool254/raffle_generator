@@ -153,34 +153,50 @@ def generate_ticket():
     doc = fitz.open(template_path)
     page = doc[0]
 
-    # === Accurate placeholder replacement (positions preserved) ===
-    # === Smart placeholder replacement (reliable + visible) ===
+    # === Smart dynamic placeholder replacement (auto-fit & flexible rect) ===
     for placeholder, value in replacements.items():
-        # Try to find placeholder text region normally
         matches = page.search_for(placeholder)
 
         if not matches:
-            # Fallback: try searching without spaces or hyphens
             alt_placeholder = placeholder.replace("-", "").replace(" ", "")
             matches = page.search_for(alt_placeholder)
 
         if not matches:
             print(f"⚠️ Placeholder not found visually: {placeholder}")
-            # Fallback: draw it at a visible default position (top-left corner)
-            page.insert_text((80, 150 + list(replacements.keys()).index(placeholder) * 25),
-                         f"{placeholder}: {value}", fontsize=12, fontname="helv", color=(0, 0, 0))
+            # fallback visible position
+            y_offset = 150 + list(replacements.keys()).index(placeholder) * 25
+            page.insert_text((80, y_offset), f"{placeholder}: {value}",
+                         fontsize=12, fontname="helv", color=(0, 0, 0))
             continue
 
-        # Replace each found placeholder region
         for rect in matches:
-            # Clear the old text
-            page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
-            # Insert replacement text exactly at same spot
-            y_position = rect.y1 - (rect.height * 0.3)
-            page.insert_text((rect.x0 + 2, y_position), str(value),
-                         fontsize=11, fontname="helv", color=(0, 0, 0))
+            text_str = str(value)
+            fontname = "helv"
+            fontsize = 12
 
-    print("✅ All placeholders replaced successfully.")
+            # measure text width
+            text_width = page.get_text_length(text_str, fontname=fontname, fontsize=fontsize)
+            min_width = rect.width
+            new_width = max(min_width, text_width + 6)  # extend rect if text is longer
+
+            # build a new rectangle that grows/shrinks based on text width
+            flex_rect = fitz.Rect(rect.x0, rect.y0, rect.x0 + new_width, rect.y1)
+
+            # clear that region
+            page.draw_rect(flex_rect, color=(1, 1, 1), fill=(1, 1, 1))
+
+            # adjust font size if text taller than box height
+            while fontsize > 6 and page.get_text_length(text_str, fontname=fontname, fontsize=fontsize) > flex_rect.width - 2:
+                fontsize -= 0.5
+
+            # vertical centering
+            y_position = flex_rect.y1 - ((flex_rect.height - fontsize) / 2)
+
+            # insert text inside flexible box
+            page.insert_text((flex_rect.x0 + 2, y_position), text_str,
+                         fontsize=fontsize, fontname=fontname, color=(0, 0, 0))
+
+    print("✅ All placeholders replaced with dynamic flexible rectangles.")
 
 
 
