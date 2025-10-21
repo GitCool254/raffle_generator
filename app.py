@@ -153,7 +153,7 @@ def generate_ticket():
     doc = fitz.open(template_path)
     page = doc[0]
 
-    # === Smart dynamic placeholder replacement (auto-fit & flexible rect) ===
+    # === Smart dynamic placeholder replacement (auto-fit & flexible rect, fixed for PyMuPDF 1.24+) ===
     for placeholder, value in replacements.items():
         matches = page.search_for(placeholder)
 
@@ -163,7 +163,6 @@ def generate_ticket():
 
         if not matches:
             print(f"⚠️ Placeholder not found visually: {placeholder}")
-            # fallback visible position
             y_offset = 150 + list(replacements.keys()).index(placeholder) * 25
             page.insert_text((80, y_offset), f"{placeholder}: {value}",
                          fontsize=12, fontname="helv", color=(0, 0, 0))
@@ -174,8 +173,8 @@ def generate_ticket():
             fontname = "helv"
             fontsize = 12
 
-            # measure text width
-            text_width = page.get_text_length(text_str, fontname=fontname, fontsize=fontsize)
+            # measure text width using fitz global function
+            text_width = fitz.get_text_length(text_str, fontname=fontname, fontsize=fontsize)
             min_width = rect.width
             new_width = max(min_width, text_width + 6)  # extend rect if text is longer
 
@@ -186,7 +185,7 @@ def generate_ticket():
             page.draw_rect(flex_rect, color=(1, 1, 1), fill=(1, 1, 1))
 
             # adjust font size if text taller than box height
-            while fontsize > 6 and page.get_text_length(text_str, fontname=fontname, fontsize=fontsize) > flex_rect.width - 2:
+            while fontsize > 6 and fitz.get_text_length(text_str, fontname=fontname, fontsize=fontsize) > flex_rect.width - 2:
                 fontsize -= 0.5
 
             # vertical centering
@@ -194,7 +193,7 @@ def generate_ticket():
 
             # insert text inside flexible box
             page.insert_text((flex_rect.x0 + 2, y_position), text_str,
-                         fontsize=fontsize, fontname=fontname, color=(0, 0, 0))
+                             fontsize=fontsize, fontname=fontname, color=(0, 0, 0))
 
     print("✅ All placeholders replaced with dynamic flexible rectangles.")
 
