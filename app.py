@@ -153,20 +153,45 @@ def generate_ticket():
     doc = fitz.open(template_path)
     page = doc[0]
 
-    # Find all placeholder rectangles
-    # === Improved placeholder replacement (handles hyphens, spaces, and missing matches) ===
-    # === Permanent full-page replacement fix (reliable for all placeholders) ===
-    page_text = page.get_text("text")
+    # === Accurate placeholder replacement (positions preserved) ===
+# Get every text block on the page
+    blocks = page.get_text("blocks")  # returns list of (x0, y0, x1, y1, text, block_no, block_type)
 
-    for placeholder, val in replacements.items():
-        page_text = page_text.replace(placeholder, str(val))
+    for b in blocks:
+        x0, y0, x1, y1, block_text = b[0], b[1], b[2], b[3], b[4]
 
-    for k, v in replacements.items():
-        print(f"Inserted {k}: {v}")
+        # Skip blocks without placeholders
+        if "{{" not in block_text or "}}" not in block_text:
+            continue
 
-        page.clean_contents()
+        # Replace any placeholders present in this block
+        new_text = block_text
+        changed = False
+        for placeholder, val in replacements.items():
+            if placeholder in new_text:
+                new_text = new_text.replace(placeholder, str(val))
+                changed = True
 
-        page.insert_text((50, 100), page_text, fontsize=12, fontname="helv", color=(0, 0, 0)) 
+        if not changed:
+            continue
+
+        # Create a rectangle that matches the original text block
+        rect = fitz.Rect(x0, y0, x1, y1)
+
+        # Cover the old text with white
+        page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
+
+        # Write the new (replaced) text in the exact same rectangle
+        # fit_font_size tries to keep font size consistent with the block height
+        try:
+            fontsize = fit_font_size(page, rect, new_text, fontname="helv")
+        except Exception:
+            fontsize = max(8, int(rect.height * 0.9))
+
+        # Insert replaced text aligned left inside the same block area
+        page.insert_textbox(rect, new_text, fontsize=fontsize, fontname="helv", align=0)
+
+    # After all replacements, continue with saving 
 
 
 
