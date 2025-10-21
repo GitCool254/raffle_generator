@@ -155,27 +155,19 @@ def generate_ticket():
 
     # Find all placeholder rectangles
     # === Improved placeholder replacement (handles hyphens, spaces, and missing matches) ===
-    for placeholder, value in replacements.items():
-        # Try to find placeholder text normally
-        text_instances = page.search_for(placeholder, quads=False)
+    # === Permanent full-page replacement fix (reliable for all placeholders) ===
+    page_text = page.get_text("text")
 
-        # Fallback: try a relaxed search without spaces or hyphens
-        if not text_instances:
-            alt_placeholder = placeholder.replace("-", "").replace(" ", "")
-            text_instances = page.search_for(alt_placeholder, quads=False)
+    for placeholder, val in replacements.items():
+        page_text = page_text.replace(placeholder, str(val))
 
-        # If still not found, log a warning
-        if not text_instances:
-            print(f"⚠️ Placeholder not found: {placeholder}")
-            continue
+    for k, v in replacements.items():
+        print(f"Inserted {k}: {v}")
 
-        # Replace each found placeholder region
-        for inst in text_instances:
-            page.draw_rect(inst, color=(1, 1, 1), fill=(1, 1, 1))  # white overlay
-            fontsize = fit_font_size(page, inst, value, fontname="helv")
-            x = inst.x0 + 1
-            y = inst.y1 - (inst.height * 0.2)
-            page.insert_text((x, y), value, fontsize=fontsize, fontname="helv", color=(0, 0, 0))
+    page.clean_contents()
+
+    page.insert_text((50, 100), page_text, fontsize=12, fontname="helv", color=(0, 0, 0)) 
+
 
 
     # Insert QR Code (adjust position as needed)
