@@ -119,14 +119,14 @@ def fit_font_size(page, rect, text, fontname="helv", max_fontsize=12):
 @app.route("/", methods=["GET", "POST"])
 def generate_ticket():
     if request.method == "GET":
-        return render_template_string(HTML_FORM)
+    return render_template_string(HTML_FORM)
 
-    fullname = request.form["fullname"]
-    price = request.form["price"]
-    place = request.form["place"]
-    date_str = request.form["date"]
+    fullname = request.form.get("fullname", "").strip()
+    price = request.form.get("price", "").strip()
+    place = request.form.get("place", "").strip()
+    date_str = request.form.get("date", "").strip()
+    time_str = request.form.get("time", "").strip()  # Use the time input as typed
     ticket_no = generate_unique_ticket_number()
-    current_time = datetime.datetime.now().strftime("%I:%M %p")
 
     replacements = {
         "{{NAME}}": fullname,
@@ -134,7 +134,7 @@ def generate_ticket():
         "{{TICKET_PRICE}}": price,
         "{{EVENT_PLACE}}": place,
         "{{DATE}}": date_str,
-        "{{TIME}}": current_time
+        "{{TIME}}": time_str
     }
 
     # Generate QR code
