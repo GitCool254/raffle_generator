@@ -164,9 +164,9 @@ def generate_ticket():
     for k, v in replacements.items():
         print(f"Inserted {k}: {v}")
 
-    page.clean_contents()
+        page.clean_contents()
 
-    page.insert_text((50, 100), page_text, fontsize=12, fontname="helv", color=(0, 0, 0)) 
+        page.insert_text((50, 100), page_text, fontsize=12, fontname="helv", color=(0, 0, 0)) 
 
 
 
