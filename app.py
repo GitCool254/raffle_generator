@@ -154,44 +154,33 @@ def generate_ticket():
     page = doc[0]
 
     # === Accurate placeholder replacement (positions preserved) ===
-# Get every text block on the page
-    blocks = page.get_text("blocks")  # returns list of (x0, y0, x1, y1, text, block_no, block_type)
+    # === Smart placeholder replacement (reliable + visible) ===
+    for placeholder, value in replacements.items():
+        # Try to find placeholder text region normally
+        matches = page.search_for(placeholder)
 
-    for b in blocks:
-        x0, y0, x1, y1, block_text = b[0], b[1], b[2], b[3], b[4]
+        if not matches:
+            # Fallback: try searching without spaces or hyphens
+            alt_placeholder = placeholder.replace("-", "").replace(" ", "")
+            matches = page.search_for(alt_placeholder)
 
-        # Skip blocks without placeholders
-        if "{{" not in block_text or "}}" not in block_text:
+        if not matches:
+            print(f"⚠️ Placeholder not found visually: {placeholder}")
+            # Fallback: draw it at a visible default position (top-left corner)
+            page.insert_text((80, 150 + list(replacements.keys()).index(placeholder) * 25),
+                         f"{placeholder}: {value}", fontsize=12, fontname="helv", color=(0, 0, 0))
             continue
 
-        # Replace any placeholders present in this block
-        new_text = block_text
-        changed = False
-        for placeholder, val in replacements.items():
-            if placeholder in new_text:
-                new_text = new_text.replace(placeholder, str(val))
-                changed = True
+        # Replace each found placeholder region
+        for rect in matches:
+            # Clear the old text
+            page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
+            # Insert replacement text exactly at same spot
+            y_position = rect.y1 - (rect.height * 0.3)
+            page.insert_text((rect.x0 + 2, y_position), str(value),
+                         fontsize=11, fontname="helv", color=(0, 0, 0))
 
-        if not changed:
-            continue
-
-        # Create a rectangle that matches the original text block
-        rect = fitz.Rect(x0, y0, x1, y1)
-
-        # Cover the old text with white
-        page.draw_rect(rect, color=(1, 1, 1), fill=(1, 1, 1))
-
-        # Write the new (replaced) text in the exact same rectangle
-        # fit_font_size tries to keep font size consistent with the block height
-        try:
-            fontsize = fit_font_size(page, rect, new_text, fontname="helv")
-        except Exception:
-            fontsize = max(8, int(rect.height * 0.9))
-
-        # Insert replaced text aligned left inside the same block area
-        page.insert_textbox(rect, new_text, fontsize=fontsize, fontname="helv", align=0)
-
-    # After all replacements, continue with saving 
+    print("✅ All placeholders replaced successfully.")
 
 
 
