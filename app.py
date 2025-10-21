@@ -153,9 +153,20 @@ def generate_ticket():
     doc = fitz.open(template_path)
     page = doc[0]
 
-    # === Smart dynamic placeholder replacement (auto-fit & flexible rect, fixed for PyMuPDF 1.24+) ===
+    # === Smart dynamic placeholder replacement (handles combined DATE/TIME and keeps input exact) ===
     for placeholder, value in replacements.items():
-        matches = page.search_for(placeholder)
+        # Merge DATE and TIME into one combined placeholder when present together
+        if placeholder in ["{{DATE}}", "{{TIME}}"]:
+            combined_placeholder = "{{DATE}} {{TIME}}"
+            combined_value = f"{replacements.get('{{DATE}}', '')} {replacements.get('{{TIME}}', '')}".strip()
+            matches = page.search_for(combined_placeholder)
+            if matches:
+                value = combined_value
+                placeholder = combined_placeholder
+            else:
+                matches = page.search_for(placeholder)
+        else:
+            matches = page.search_for(placeholder)
 
         if not matches:
             alt_placeholder = placeholder.replace("-", "").replace(" ", "")
@@ -169,7 +180,7 @@ def generate_ticket():
             continue
 
         for rect in matches:
-            text_str = str(value)
+            text_str = str(value)  # use the exact input text, no auto-generated data
             fontname = "helv"
             fontsize = 12
 
@@ -178,10 +189,10 @@ def generate_ticket():
             min_width = rect.width
             new_width = max(min_width, text_width + 6)  # extend rect if text is longer
 
-            # build a new rectangle that grows/shrinks based on text width
+            # build flexible rect based on text width
             flex_rect = fitz.Rect(rect.x0, rect.y0, rect.x0 + new_width, rect.y1)
 
-            # clear that region
+            # clear region
             page.draw_rect(flex_rect, color=(1, 1, 1), fill=(1, 1, 1))
 
             # adjust font size if text taller than box height
@@ -193,9 +204,9 @@ def generate_ticket():
 
             # insert text inside flexible box
             page.insert_text((flex_rect.x0 + 2, y_position), text_str,
-                             fontsize=fontsize, fontname=fontname, color=(0, 0, 0))
+                         fontsize=fontsize, fontname=fontname, color=(0, 0, 0))
 
-    print("✅ All placeholders replaced with dynamic flexible rectangles.")
+    print("✅ All placeholders replaced, including DATE/TIME combined and user-input preserved.")
 
 
 
